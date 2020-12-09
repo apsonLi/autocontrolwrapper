@@ -31,6 +31,10 @@ class AdbBase:
                                 encoding='utf-8')
         return data.stdout.read()
 
+    def Adbdump(self,path):
+        os.system("adb -s %s shell uiautomator dump --compressed /sdcard/window_dump.xml" % self.dev)
+        os.system("adb -s %s pull /sdcard/window_dump.xml %s" % (self.dev, path))
+
 # 测试点击
 # Adb_base("127.0.0.1:7555").AdbShellInputTap(228, 174)
 # time.sleep(1)
@@ -39,3 +43,4 @@ class AdbBase:
 # Adb_base("127.0.0.1:7555").AdbShellInputText("ssss")
 # Adb_base("127.0.0.1:7555").AdbShellScreencapPullRm(r"D:\bao\1\0531落地页")
 # print(Adb_base("127.0.0.1:7555").AdbShellPmListPackages())
+AdbBase("127.0.0.1:7555").Adbdump(r"D:\bao\1\0531落地页")
