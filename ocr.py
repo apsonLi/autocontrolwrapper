@@ -19,8 +19,12 @@ API_KEY = "b9db4d674b5f3af780f2ab665ec67527"
 
 
 class OCRbase:
-    def __init__(self, filepath):
-        self.filepath = filepath
+	# 默认不裁剪，如果有裁剪需求，isFix 为True 时是裁剪模式，需要传入坐标
+    def __init__(self, filepath,isFix=False,topX=0,bottomX=0,topY=0,bottomY=0):
+    	self.filepath = filepath
+    	if isFix:
+    		self.filepath = self.__opencv_Picture(topX,bottomX,topY,bottomY)
+        
 
     def _get_file_content(self):
         with open(self.filepath, 'rb') as fp:
@@ -40,12 +44,7 @@ class OCRbase:
         image = self._get_file_content()
         result = _client.general(image)
         data = result["words_result"]
-
-        for i in data:
-            if value in i['words']:
-                tap.append(i["location"]["left"])
-                tap.append(i["location"]["top"])
-                return tap
+        return [[i["location"]['left'],i["location"]['top']] for i in data if value in i['words']]
 
     # 返回坐标 精准版
     def ocr_Tap2(self, value):
@@ -53,12 +52,8 @@ class OCRbase:
         image = self._get_file_content()
         result = _client.accurate(image)
         data = result["words_result"]
-        print(data)
-        for i in data:
-            if value in i['words']:
-                tap.append(i["location"]["left"])
-                tap.append(i["location"]["top"])
-                return tap
+        return [[i["location"]['left'],i["location"]['top']] for i in data if value in i['words']]
+        
 
     def _getHeader(self):
         curTime = str(int(time.time()))
@@ -114,16 +109,17 @@ class OCRbase:
                     return k["content"]
 
     # opencv进行屏幕截取并重新生成新图片如：hmy.png->hmy2.png
-    def opencv_Picture(self, x1, x2, y1, y2):
+    def __opencv_Picture(self, x1, x2, y1, y2):
         img = cv2.imread(self.filepath)
         # cv2.namedWindow("Image")
         img = img[y1:y2, x1:x2]
         new_file = self.filepath.split(".")[0]
-        name_picture = new_file + "2" + ".png"
+        name_picture = new_file + "_refix" + ".png"
         cv2.imwrite(name_picture, img)
+        return name_picture
 
 # 测试
 # print(OCRbaidu(r"D:\PyCharm\space\testApi\picture\hmy2.png").ocr_QFdata())
 # print(OCRbaidu(r"D:\PyCharm\space\testApi\picture\hmy.png").ocr_Tap2("进入游戏"))
 # print(OCRbase(r"D:\PyCharm\space\testApi\picture\hmy.png").ocr_QFdata_xf("进入游戏"))
-# print(OCRbase(r"D:\PyCharm\space\testApi\picture\hmy2.png").ocr_QFdata_xf())
+# print(OCRbase(r"/Users/apson/Desktop/30600.png").ocr_Tap('进入游戏')))
