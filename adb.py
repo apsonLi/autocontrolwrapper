@@ -43,4 +43,4 @@ class AdbBase:
 # Adb_base("127.0.0.1:7555").AdbShellInputText("ssss")
 # Adb_base("127.0.0.1:7555").AdbShellScreencapPullRm(r"D:\bao\1\0531落地页")
 # print(Adb_base("127.0.0.1:7555").AdbShellPmListPackages())
-AdbBase("127.0.0.1:7555").Adbdump(r"D:\bao\1\0531落地页")
+# AdbBase("127.0.0.1:7555").Adbdump(r"D:\bao\1\0531落地页")

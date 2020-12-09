@@ -4,6 +4,7 @@ import time
 import hashlib
 import base64
 import json
+import cv2
 
 # baidu_ocr
 _APP_ID_baidu = '17975398'
@@ -92,7 +93,7 @@ class OCRbase:
         return result
 
     # 讯飞返回字符坐标 {'x': 596, 'y': 570}
-    def ocr_Tapdata_xf(self,value):
+    def ocr_Tapdata_xf(self, value):
         data = self.get_data_xunfei()
         data = json.loads(data)
         b = data["data"]["block"]
@@ -112,6 +113,14 @@ class OCRbase:
                 for k in z["word"]:
                     return k["content"]
 
+    # opencv进行屏幕截取并重新生成新图片如：hmy.png->hmy2.png
+    def opencv_Picture(self, x1, x2, y1, y2):
+        img = cv2.imread(self.filepath)
+        # cv2.namedWindow("Image")
+        img = img[y1:y2, x1:x2]
+        new_file = self.filepath.split(".")[0]
+        name_picture = new_file + "2" + ".png"
+        cv2.imwrite(name_picture, img)
 
 # 测试
 # print(OCRbaidu(r"D:\PyCharm\space\testApi\picture\hmy2.png").ocr_QFdata())
