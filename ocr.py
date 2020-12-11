@@ -19,12 +19,11 @@ API_KEY = "b9db4d674b5f3af780f2ab665ec67527"
 
 
 class OCRbase:
-	# 默认不裁剪，如果有裁剪需求，isFix 为True 时是裁剪模式，需要传入坐标
-    def __init__(self, filepath,isFix=False,topX=0,bottomX=0,topY=0,bottomY=0):
-    	self.filepath = filepath
-    	if isFix:
-    		self.filepath = self.__opencv_Picture(topX,bottomX,topY,bottomY)
-        
+    # 默认不裁剪，如果有裁剪需求，isFix 为True 时是裁剪模式，需要传入坐标
+    def __init__(self, filepath, isFix=False, topX=0, bottomX=0, topY=0, bottomY=0):
+        self.filepath = filepath
+        if isFix:
+            self.filepath = self.__opencv_Picture(topX, bottomX, topY, bottomY)
 
     def _get_file_content(self):
         with open(self.filepath, 'rb') as fp:
@@ -44,7 +43,7 @@ class OCRbase:
         image = self._get_file_content()
         result = _client.general(image)
         data = result["words_result"]
-        return [[i["location"]['left'],i["location"]['top']] for i in data if value in i['words']]
+        return [[i["location"]['left'], i["location"]['top']] for i in data if value in i['words']]
 
     # 返回坐标 精准版
     def ocr_Tap2(self, value):
@@ -52,8 +51,7 @@ class OCRbase:
         image = self._get_file_content()
         result = _client.accurate(image)
         data = result["words_result"]
-        return [[i["location"]['left'],i["location"]['top']] for i in data if value in i['words']]
-        
+        return [[i["location"]['left'], i["location"]['top']] for i in data if value in i['words']]
 
     def _getHeader(self):
         curTime = str(int(time.time()))
