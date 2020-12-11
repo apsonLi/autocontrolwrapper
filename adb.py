@@ -74,7 +74,6 @@ class AdbBase:
 
         return alltap
 
-
     # xml文件转换成json
     def xml_to_json(self, xml):
         xml_file = open(xml, "r", encoding="utf-8")
@@ -83,6 +82,41 @@ class AdbBase:
         json_str = json.dumps(xml_parse, ensure_ascii=False, indent=1)
         json_data = json.loads(json_str)
         return json_data
+
+    # 返回packageName 和 launcher_act
+    def getAPKInfo(self, filePath):
+        data = os.popen("aapt dump badging %s | findstr package" % filePath).read()
+        apkname = data.split('\'')[1]
+
+        data3 = subprocess.Popen("aapt dump badging %s | findstr launchable-activity" % filePath,
+                                 shell=True, stdout=subprocess.PIPE, encoding='utf-8')
+        launchable_activity = data3.stdout.read().split('\'')[1]
+
+        return apkname, launchable_activity
+
+    # 安装apk
+    def install_apk(self, path):
+        os.system("adb -s %s install %s" % (self.dev, path))
+
+    # 卸载apk
+    def uninstall_apk(self, path):
+        apkname, _ = self.getAPKInfo(path)
+        os.system("adb -s %s uninstall %s" % (self.dev, apkname))
+
+    # 启动apk
+    def start_apk(self, path):
+        apkname, activity = self.getAPKInfo(path)
+        os.system("adb -s {0} shell am start -n {1}/{2}".format(self.dev, apkname, activity))
+
+    #判断是否存在包名
+    def findIsExitPackage(self,path):
+        apkname, _ = self.getAPKInfo(path)
+        data = self.AdbShellPmListPackages()
+        for i in data:
+            if apkname in i:
+                return True
+            else:
+                return False
 
 
 # 测试点击
@@ -96,4 +130,9 @@ class AdbBase:
 # print(AdbBase("127.0.0.1:7555").Adbdump(r"D:\bao\1\0531落地页"))
 # print(AdbBase("127.0.0.1:7555").xml_to_json(r"D:\bao\1\0531落地页\window_dump.xml"))
 # print(AdbBase("127.0.0.1:7555").Adbdump_Tap(r"D:\bao\1\0531落地页", "微信"))
-# print(AdbBase("127.0.0.1:7555").Adbdump_Tap(r"D:\bao\1\0531落地页", "微信"))
+# a= AdbBase("127.0.0.1:62001").findIsExitPackage(r"D:\bao\apk\20201130\222.apk")
+# a= AdbBase("127.0.0.1:62001").install_apk(r"D:\bao\apk\20201130\222.apk")
+
+# print(a)
+
+# AdbBase("127.0.0.1:62027").install_apk(r"D:\bao\apk\20201130\222.apk")
