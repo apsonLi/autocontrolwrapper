@@ -96,3 +96,4 @@ class AdbBase:
 # print(AdbBase("127.0.0.1:7555").Adbdump(r"D:\bao\1\0531落地页"))
 # print(AdbBase("127.0.0.1:7555").xml_to_json(r"D:\bao\1\0531落地页\window_dump.xml"))
 # print(AdbBase("127.0.0.1:7555").Adbdump_Tap(r"D:\bao\1\0531落地页", "微信"))
+# print(AdbBase("127.0.0.1:7555").Adbdump_Tap(r"D:\bao\1\0531落地页", "微信"))
