@@ -34,45 +34,32 @@ class AdbBase:
                                 encoding='utf-8')
         return data.stdout.read()
 
-    def Adbdump(self, path):
+    def __adbDump(self):
+        path = os.getcwd()
         os.system("adb -s %s shell uiautomator dump --compressed /sdcard/window_dump.xml" % self.dev)
         os.system("adb -s %s pull /sdcard/window_dump.xml %s" % (self.dev, path))
         return os.path.join(path, "window_dump.xml")
 
     # 根据字符，在dump文件中查找对应坐标 path:文件地址，不包括文件名，返回是：[[224.0, 174.5], [968.0, 468.5]]
-    def Adbdump_Tap(self, path, text):
-
-        alltap = []
-        file = self.Adbdump(path)
+    def adbDumpTap(self, text):
+        file = self.__adbDump()
         json_data = self.xml_to_json(file)
-        # print(json_data)
-        for _, values in json_data.items():
-            for _, value in values.items():
-                if value != '0':
-                    for key, data in value.items():
-                        if key == "node":
-                            for k in data:
-                                for z in k:
-                                    if z == "node":
-                                        for i in k[z]:
-                                            if type(i) is dict:
-                                                for m, n in i.items():
-                                                    if text == n:
-                                                        all_value = i["@bounds"]
-                                                        # print(all_value)
-                                                        a = []
-                                                        b = []
-                                                        tap = []
-                                                        for index, x in enumerate(re.findall('\d+', all_value)):
-                                                            if index % 2 == 1:
-                                                                b.append(int(x))
-                                                            else:
-                                                                a.append(int(x))
-                                                        tap.append(sum(a) / 2.0)
-                                                        tap.append(sum(b) / 2.0)
-                                                        alltap.append(tap)
+        self.__cyclefromNode(json_data["hierarchy"],text)
 
-        return alltap
+    def __cyclefromNode(self,json,text):
+        #遍历每个Node节点
+        if isinstance(json,dict) and 'node' in json.keys():
+            self.__cyclefromNode(json['node'],text)
+        elif isinstance(json,list) or isinstance(json,tuple):
+            for item in json:
+                self.__cyclefromNode(item,text)
+        else:
+            if text == json["@text"]:
+                point = json["@bounds"].split('][')[0][1:].split(",")
+                self.AdbShellInputTap(point[0],point[1])
+                return True
+            
+
 
     # xml文件转换成json
     def xml_to_json(self, xml):
@@ -96,7 +83,12 @@ class AdbBase:
 
     # 安装apk
     def install_apk(self, path):
-        os.system("adb -s %s install %s" % (self.dev, path))
+        result = subprocess.Popen("adb -s %s install %s" % (self.dev, path),
+                                 shell=True, stdout=subprocess.PIPE, encoding='utf-8').stdout.read()
+        if 'Success' in result:
+            return True
+        else:
+            return False
 
     # 卸载apk
     def uninstall_apk(self, path):
@@ -119,6 +111,23 @@ class AdbBase:
                 return False
 
 
+    #判断模拟器是否在运行中
+    def detectIsWorking(self):
+        result = subprocess.Popen("adb shell dumpsys activity | grep mResumedActivity" ,
+                                 shell=True, stdout=subprocess.PIPE, encoding='utf-8')
+        result = result.stdout.read()
+        if result != None and 'com.vphone.launcher/.Launcher' in  result:
+            return False
+        else:
+            return True
+
+    # 关闭当前应用
+    def killCurrentGame(self,apkname):
+        os.system("adb -s %s shell am force-stop %s" % (self.dev, apkname))
+
+
+
+
 # 测试点击
 # Adb_base("127.0.0.1:7555").AdbShellInputTap(228, 174)
 # time.sleep(1)
@@ -130,7 +139,8 @@ class AdbBase:
 # print(AdbBase("127.0.0.1:7555").Adbdump(r"D:\bao\1\0531落地页"))
 # print(AdbBase("127.0.0.1:7555").xml_to_json(r"D:\bao\1\0531落地页\window_dump.xml"))
 # print(AdbBase("127.0.0.1:7555").Adbdump_Tap(r"D:\bao\1\0531落地页", "微信"))
-# a= AdbBase("127.0.0.1:62001").findIsExitPackage(r"D:\bao\apk\20201130\222.apk")
+a= AdbBase("3EP0219114001784")
+print(a.adbDumpTap("知乎"))
 # a= AdbBase("127.0.0.1:62001").install_apk(r"D:\bao\apk\20201130\222.apk")
 
 # print(a)
