@@ -114,10 +114,11 @@ class OCRbase:
 
     # opencv进行屏幕截取并重新生成新图片如：hmy.png->hmy2.png
     def __opencv_Picture(self, x1, x2, y1, y2, name):
-        if "png" or "jpg" in self.filepath:
-            path=self.filepath
+        if "png" in self.filepath or "jpg" in self.filepath:
+            path = self.filepath
         else:
             path = os.path.join(self.filepath, "%s.png" % name)
+            # print(path)
         try:
             img = cv2.imread(path)
             # cv2.namedWindow("Image")

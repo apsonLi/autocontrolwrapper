@@ -27,14 +27,14 @@ class AdbBase:
 
     # 保存截图到指定路径
     def AdbShellScreencapPullRm(self, path, name):
-        if self.p is None:
-            subprocess.Popen("adb -s %s shell screencap -p /sdcard/%s.png > sdcard/info.txt" % (
-                self.dev, name))
-            time.sleep(2)
-            os.popen("adb -s %s pull /sdcard/%s.png %s >log.txt" % (self.dev, name, path))
-            time.sleep(2)
+        # if self.p is None:
+        subprocess.Popen("adb -s %s shell screencap -p /sdcard/%s.png > sdcard/info.txt" % (
+            self.dev, name))
+        time.sleep(2)
+        os.popen("adb -s %s pull /sdcard/%s.png %s >log.txt" % (self.dev, name, path))
+        time.sleep(2)
 
-            # 保存截图到指定路径
+        # 保存截图到指定路径
 
     def AdbShellScreencapPullRm2(self, path):
         if self.p is not None:
@@ -51,14 +51,18 @@ class AdbBase:
 
     def __adbDump(self, apkName):
         path = os.getcwd()
-        if self.w != None:
+        if self.w is not None:
             path = self.w
         # os.path.abspath()
         subprocess.Popen(
             "adb -s %s shell uiautomator dump --compressed /sdcard/%s.xml > sdcard/info.txt" % (self.dev, apkName))
         time.sleep(2)
         os.popen("adb -s %s pull /sdcard/%s.xml %s >log.txt" % (self.dev, apkName, path))
-        return path
+        time.sleep(2)
+        if "xml" in path:
+            return path
+        else:
+            return os.path.join(path, "%s.xml" % apkName)
 
     # 根据字符，在dump文件中查找对应坐标 path:文件地址，不包括文件名，返回是：[[224.0, 174.5], [968.0, 468.5]]
     def adbDumpTap(self, text, path):
