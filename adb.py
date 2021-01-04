@@ -8,13 +8,15 @@ import argparse
 
 
 class AdbBase:
-    def __init__(self, dev, p=None, w=None):
+    def __init__(self, dev, p=None, w=None,f=None):
         self.dev = dev
         self.p = p
         self.w = w
+        self.f = f
 
     # 根据坐标点击228 174  1000 28
     def AdbShellInputTap(self, x, y):
+        self.log("点击位置:"+x+"|"+y)
         os.popen("adb -s %s shell input tap %s %s" % (self.dev, x, y))
 
     # 输入字符
@@ -26,21 +28,17 @@ class AdbBase:
         time.sleep(x)
 
     # 保存截图到指定路径
-    def AdbShellScreencapPullRm(self, path, name):
+    def AdbShellScreencapPullRm(self, path):
         # if self.p is None:
-        subprocess.Popen("adb -s %s shell screencap -p /sdcard/%s.png > sdcard/info.txt" % (
-            self.dev, name))
+        subprocess.Popen("adb -s %s shell screencap -p /sdcard/screen.png > sdcard/info.txt" % (
+            self.dev))
         time.sleep(2)
-        os.popen("adb -s %s pull /sdcard/%s.png %s >log.txt" % (self.dev, name, path))
+        os.popen("adb -s %s pull /sdcard/screen.png %s > log.txt" % (self.dev, path))
         time.sleep(2)
 
         # 保存截图到指定路径
 
-    def AdbShellScreencapPullRm2(self, path):
-        if self.p is not None:
-            subprocess.Popen("adb -s %s shell screencap -p /sdcard/%s.png" % (self.dev, self.p))
-            time.sleep(1)
-            subprocess.Popen("adb -s %s pull /sdcard/%s.png %s" % (self.dev, self.p, path))
+
 
     # //查看手机上第三方应用的packageName
     # //adb shell pm list packages -3
@@ -66,6 +64,7 @@ class AdbBase:
 
     # 根据字符，在dump文件中查找对应坐标 path:文件地址，不包括文件名，返回是：[[224.0, 174.5], [968.0, 468.5]]
     def adbDumpTap(self, text, path):
+        self.log("根据文字点击"+"“"+text+"”")
         apkname, _ = self.getAPKInfo(path)
         file = self.__adbDump(apkname)
         json_data = self.xml_to_json(file)
@@ -98,6 +97,7 @@ class AdbBase:
 
     # 返回packageName 和 launcher_act
     def getAPKInfo(self, filePath):
+        self.log("获取apk信息")
         data = subprocess.Popen("aapt dump badging %s | findstr package" % filePath,
                                 shell=True, stdout=subprocess.PIPE, encoding='utf-8')
         apkname = data.stdout.read().split('\'')[1]
@@ -124,10 +124,12 @@ class AdbBase:
 
     # 启动apk
     def start_apk(self, path):
+        self.log("启动 apk")
         try:
             apkname, activity = self.getAPKInfo(path)
             subprocess.Popen(
                 "adb -s {0} shell am start -n {1}/{2} > sdcard/info.txt".format(self.dev, apkname, activity))
+            self.log("启动成功")
         except:
             err = "apk路径错误"
             return err
@@ -156,6 +158,7 @@ class AdbBase:
     def killCurrentGame(self, path):
         apkname, _ = self.getAPKInfo(path)
         subprocess.Popen("adb -s %s shell am force-stop %s" % (self.dev, apkname))
+        self.log("关闭应用")
 
 
 def allStart():
@@ -164,15 +167,23 @@ def allStart():
     parser.add_argument('-p', '--picturepath', help='图片地址')
     parser.add_argument('-apkPath', '---apkPath', help='apk路径')
     parser.add_argument('-w', '---windowpath', help='window.xml 路径')
+    parser.add_argument('-d', '---debugfilepath', help='log文件路径')
     args = parser.parse_args()
 
     sid = args.sid
     picture = args.picturepath
     apkPath = args.apkPath
     windowpath = args.windowpath
+    debugfilepath = args.debugfilepath
 
-    adb = AdbBase(sid, picture, windowpath)
+    adb = AdbBase(sid, picture, windowpath,debugfilepath)
     ocr = OCRbase(picture)
+    adb.log(10*"-"+'初始化信息'+10*"-")
+
+    adb.log("sid:"+ sid)
+    adb.log("picturepath:"+picture)
+    adb.log("apkPath:"+apkPath)
+    adb.log("windowpath:"+windowpath)
     return picture, apkPath, adb, ocr
 
 
@@ -194,6 +205,20 @@ def dataRe(state=0, err="", datas=""):
             "err": ""
         }
     return value
+
+
+
+def log(self,info):
+    if not self.f:
+        return
+    import datetime
+    i = datetime.datetime.now()
+    print ("%s" % i)
+    tag = "adb["+ i + "]:  "
+    with open(self.f,'a') as f: # 'a'表示append,即在原来文件内容后继续写数据（不清楚原有数据）
+        f.write(info+"\n")
+
+
 
 # 测试点击
 # AdbBase("127.0.0.1:62001").AdbShellInputTap(1036, 225)
