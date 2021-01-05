@@ -25,13 +25,13 @@ class OCRbase:
     # 默认不裁剪，如果有裁剪需求，isFix 为True 时是裁剪模式，需要传入坐标
     def __init__(self, filepath, isFix=False, topX=0, bottomX=0, topY=0, bottomY=0):
         self.filepath = filepath
-        print("初始化文件地址：", self.filepath)
+        # print("初始化文件地址：", self.filepath)
         if isFix:
             self.filepath = self.__opencv_Picture(topX, bottomX, topY, bottomY)
-            print("裁剪后文件地址：", self.filepath)
+            # print("裁剪后文件地址：", self.filepath)
 
     def _get_file_content(self):
-        print("打开文件地址：", self.filepath)
+        # print("打开文件地址：", self.filepath)
         with open(self.filepath, 'rb') as fp:
             return fp.read()
 
@@ -41,7 +41,7 @@ class OCRbase:
         try:
             image = self._get_file_content()
             resluts = _client.basicAccurate(image)
-            print("未处理前数据：", resluts)
+            # print("未处理前数据：", resluts)
             return resluts["words_result"][0]["words"]
         except:
             state = "小图识别错误，请查看大图"
@@ -121,24 +121,19 @@ class OCRbase:
         path = self.filepath
         try:
             img_g = cv2.imread(path)
-            img_g = None
-            # print(img_g)
             if img_g is None:  # 图片路径存在正常图片，但是cv2 读取图片报错
-                print(img_g)
                 img = Image.open(path)
                 img = np.asanyarray(img)
                 img_g = img[:, :, [2, 1, 0]]  # 原本是RGB->BGR
             img = img_g[y1:y2, x1:x2]
             new_file = path.split(".")[0]
             # print(new_file)
-            name_picture = new_file + "_refix" + ".png"
-            cv2.imwrite(name_picture, img)
-            print("name_picture:", name_picture)
-            return name_picture
-        except Exception as e:
-            print(e)
-            print("新图片出错返回源地址：", path)
-            return path
+            new_picture = new_file + "_refix" + ".png"
+            cv2.imwrite(new_picture, img)
+            # print("new_picture:", name_picture)
+            return new_picture
+        except:
+            pass
 
 # 测试
 # print(OCRbaidu(r"D:\PyCharm\space\testApi\picture\hmy2.png").ocr_QFdata())
