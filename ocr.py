@@ -6,6 +6,8 @@ import base64
 import json
 import os
 import cv2
+from PIL import Image
+import numpy as np
 
 # baidu_ocr
 _APP_ID_baidu = '17975398'
@@ -23,10 +25,13 @@ class OCRbase:
     # 默认不裁剪，如果有裁剪需求，isFix 为True 时是裁剪模式，需要传入坐标
     def __init__(self, filepath, isFix=False, topX=0, bottomX=0, topY=0, bottomY=0):
         self.filepath = filepath
+        print("初始化文件地址：", self.filepath)
         if isFix:
             self.filepath = self.__opencv_Picture(topX, bottomX, topY, bottomY)
+            print("裁剪后文件地址：", self.filepath)
 
     def _get_file_content(self):
+        print("打开文件地址：", self.filepath)
         with open(self.filepath, 'rb') as fp:
             return fp.read()
 
@@ -36,10 +41,10 @@ class OCRbase:
         try:
             image = self._get_file_content()
             resluts = _client.basicAccurate(image)
-            # print(resluts)
+            print("未处理前数据：", resluts)
             return resluts["words_result"][0]["words"]
         except:
-            state = 1
+            state = "小图识别错误，请查看大图"
             return state
 
     # 返回坐标 普通版
@@ -115,15 +120,24 @@ class OCRbase:
     def __opencv_Picture(self, x1, x2, y1, y2):
         path = self.filepath
         try:
-            img = cv2.imread(path)
-            # cv2.namedWindow("Image")
-            img = img[y1:y2, x1:x2]
+            img_g = cv2.imread(path)
+            img_g = None
+            # print(img_g)
+            if img_g is None:  # 图片路径存在正常图片，但是cv2 读取图片报错
+                print(img_g)
+                img = Image.open(path)
+                img = np.asanyarray(img)
+                img_g = img[:, :, [2, 1, 0]]  # 原本是RGB->BGR
+            img = img_g[y1:y2, x1:x2]
             new_file = path.split(".")[0]
             # print(new_file)
             name_picture = new_file + "_refix" + ".png"
             cv2.imwrite(name_picture, img)
+            print("name_picture:", name_picture)
             return name_picture
-        except:
+        except Exception as e:
+            print(e)
+            print("新图片出错返回源地址：", path)
             return path
 
 # 测试

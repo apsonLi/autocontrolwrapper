@@ -32,6 +32,7 @@ class AdbBase:
     def AdbShellScreencapPullRm(self, path):
         # if self.p is None:
         os.popen("adb -s %s exec-out screencap -p > %s" % (self.dev, path))
+        time.sleep(5)
         # 保存截图到指定路径
 
     # //查看手机上第三方应用的packageName
