@@ -21,11 +21,10 @@ API_KEY = "b9db4d674b5f3af780f2ab665ec67527"
 
 class OCRbase:
     # 默认不裁剪，如果有裁剪需求，isFix 为True 时是裁剪模式，需要传入坐标
-    def __init__(self, filepath, isFix=False, topX=0, bottomX=0, topY=0, bottomY=0, name="Screen"):
+    def __init__(self, filepath, isFix=False, topX=0, bottomX=0, topY=0, bottomY=0):
         self.filepath = filepath
-        self.name = name
         if isFix:
-            self.filepath = self.__opencv_Picture(topX, bottomX, topY, bottomY, self.name)
+            self.filepath = self.__opencv_Picture(topX, bottomX, topY, bottomY)
 
     def _get_file_content(self):
         with open(self.filepath, 'rb') as fp:
@@ -113,25 +112,19 @@ class OCRbase:
                     return k["content"]
 
     # opencv进行屏幕截取并重新生成新图片如：hmy.png->hmy2.png
-    def __opencv_Picture(self, x1, x2, y1, y2, name):
-        if "png" in self.filepath or "jpg" in self.filepath:
-            path = self.filepath
-        else:
-            path = os.path.join(self.filepath, "%s.png" % name)
-            # print(path)
+    def __opencv_Picture(self, x1, x2, y1, y2):
+        path = self.filepath
         try:
             img = cv2.imread(path)
             # cv2.namedWindow("Image")
             img = img[y1:y2, x1:x2]
-            new_file = path.split(".")[0] + path.split(".")[1] + path.split(".")[2] + path.split(".")[3]
-            name_picture = new_file + "_refix" + ".png"
-            cv2.imwrite(name_picture, img)
-            return name_picture
-        except IndexError:
             new_file = path.split(".")[0]
+            # print(new_file)
             name_picture = new_file + "_refix" + ".png"
             cv2.imwrite(name_picture, img)
             return name_picture
+        except:
+            return path
 
 # 测试
 # print(OCRbaidu(r"D:\PyCharm\space\testApi\picture\hmy2.png").ocr_QFdata())

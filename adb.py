@@ -8,7 +8,7 @@ import argparse
 
 
 class AdbBase:
-    def __init__(self, dev, p=None, w=None,f=None):
+    def __init__(self, dev, p=None, w=None, f=None):
         self.dev = dev
         self.p = p
         self.w = w
@@ -16,10 +16,11 @@ class AdbBase:
 
     # 根据坐标点击228 174  1000 28
     def AdbShellInputTap(self, x, y):
-        self.log("点击位置:"+x+"|"+y)
+        self.log("点击位置:" + str(x) + "|" + str(y))
         os.popen("adb -s %s shell input tap %s %s" % (self.dev, x, y))
 
-    # 输入字符
+        # 输入字符
+
     def AdbShellInputText(self, text):
         os.popen("adb -s %s shell input text %s" % (self.dev, text))
 
@@ -30,15 +31,8 @@ class AdbBase:
     # 保存截图到指定路径
     def AdbShellScreencapPullRm(self, path):
         # if self.p is None:
-        subprocess.Popen("adb -s %s shell screencap -p /sdcard/screen.png > sdcard/info.txt" % (
-            self.dev))
-        time.sleep(2)
-        os.popen("adb -s %s pull /sdcard/screen.png %s > log.txt" % (self.dev, path))
-        time.sleep(2)
-
+        os.popen("adb -s %s exec-out screencap -p > %s" % (self.dev, path))
         # 保存截图到指定路径
-
-
 
     # //查看手机上第三方应用的packageName
     # //adb shell pm list packages -3
@@ -64,7 +58,7 @@ class AdbBase:
 
     # 根据字符，在dump文件中查找对应坐标 path:文件地址，不包括文件名，返回是：[[224.0, 174.5], [968.0, 468.5]]
     def adbDumpTap(self, text, path):
-        self.log("根据文字点击"+"“"+text+"”")
+        self.log("根据文字点击" + "“" + str(text) + "”")
         apkname, _ = self.getAPKInfo(path)
         file = self.__adbDump(apkname)
         json_data = self.xml_to_json(file)
@@ -128,7 +122,7 @@ class AdbBase:
         try:
             apkname, activity = self.getAPKInfo(path)
             subprocess.Popen(
-                "adb -s {0} shell am start -n {1}/{2} > sdcard/info.txt".format(self.dev, apkname, activity))
+                "adb -s {0} shell am start -S -n {1}/{2} > sdcard/info.txt".format(self.dev, apkname, activity))
             self.log("启动成功")
         except:
             err = "apk路径错误"
@@ -160,6 +154,16 @@ class AdbBase:
         subprocess.Popen("adb -s %s shell am force-stop %s" % (self.dev, apkname))
         self.log("关闭应用")
 
+    # 打印log到指定地址
+    def log(self, info):
+        if not self.f:
+            return
+        current_time = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
+        # print("%s" % i)
+        tag = "adb[" + str(current_time) + "]:  "
+        with open(self.f, 'a') as f:  # 'a'表示append,即在原来文件内容后继续写数据（不清楚原有数据）
+            f.write(str(tag) + str(info) + "\n")
+
 
 def allStart():
     parser = argparse.ArgumentParser(description="powered from apson")
@@ -176,14 +180,14 @@ def allStart():
     windowpath = args.windowpath
     debugfilepath = args.debugfilepath
 
-    adb = AdbBase(sid, picture, windowpath,debugfilepath)
+    adb = AdbBase(sid, picture, windowpath, debugfilepath)
     ocr = OCRbase(picture)
-    adb.log(10*"-"+'初始化信息'+10*"-")
+    adb.log(10 * "-" + '初始化信息' + 10 * "-")
 
-    adb.log("sid:"+ sid)
-    adb.log("picturepath:"+picture)
-    adb.log("apkPath:"+apkPath)
-    adb.log("windowpath:"+windowpath)
+    adb.log("sid:" + sid)
+    adb.log("picturepath:" + picture)
+    adb.log("apkPath:" + apkPath)
+    adb.log("windowpath:" + windowpath)
     return picture, apkPath, adb, ocr
 
 
@@ -205,20 +209,6 @@ def dataRe(state=0, err="", datas=""):
             "err": ""
         }
     return value
-
-
-
-def log(self,info):
-    if not self.f:
-        return
-    import datetime
-    i = datetime.datetime.now()
-    print ("%s" % i)
-    tag = "adb["+ i + "]:  "
-    with open(self.f,'a') as f: # 'a'表示append,即在原来文件内容后继续写数据（不清楚原有数据）
-        f.write(info+"\n")
-
-
 
 # 测试点击
 # AdbBase("127.0.0.1:62001").AdbShellInputTap(1036, 225)
