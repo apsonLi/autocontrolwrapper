@@ -119,20 +119,20 @@ class OCRbase:
     # opencv进行屏幕截取并重新生成新图片如：hmy.png->hmy2.png
     def __opencv_Picture(self, x1, x2, y1, y2):
         path = self.filepath
-        img_g = cv2.imread(path)
-        # print("开始剪切:", path)
-        if img_g is None:  # 图片路径存在正常图片，但是cv2 读取图片报错
-            img = Image.open(path)
-            img = np.asanyarray(img)
-            img_g = img[:, :, [2, 1, 0]]  # 原本是RGB->BGR
-        img = img_g[y1:y2, x1:x2]
-        # print("剪切完成")
-        new_file = path.split(".")[0]
-        # print("new_file:", new_file)
-        new_picture = new_file + "_refix" + ".png"
-        cv2.imwrite(new_picture, img)
-        # print("new_picture:", new_picture)
-        return new_picture
+        try:
+            cv_image = cv2.imread(path)
+            # print(img_g)
+            image_fixed = cv_image[y1:y2, x1:x2]
+            new_file = path.split(".")[0]
+            name_picture = new_file + "_refix" + ".png"
+            cv2.imwrite(name_picture, image_fixed)
+            print("name_picture:", name_picture)
+            return name_picture
+        except Exception as e:
+            print(e)
+            print("新图片出错返回源地址：", path)
+            return path
+
 
 # 测试
 # print(OCRbaidu(r"D:\PyCharm\space\testApi\picture\hmy2.png").ocr_QFdata())
