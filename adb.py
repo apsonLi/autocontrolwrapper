@@ -8,21 +8,32 @@ import argparse
 
 
 class AdbBase:
-    def __init__(self, dev, p=None, w=None, f=None):
+    def __init__(self, dev, p=None, w=None, f=None, log=None):
         self.dev = dev
         self.p = p
         self.w = w
         self.f = f
+        self.detaillog = log
 
     # 根据坐标点击228 174  1000 28
-    def AdbShellInputTap(self, x, y):
+    def AdbShellInputTap(self, state, x, y):
+        self.printLog(state, "点击位置:" + str(x) + "|" + str(y))
         self.log("点击位置:" + str(x) + "|" + str(y))
         os.popen("adb -s %s shell input tap %s %s" % (self.dev, x, y))
 
         # 输入字符
 
     def AdbShellInputText(self, text):
+        self.printLog("账号登录", "输入字符：" + str(text))
         os.popen("adb -s %s shell input text %s" % (self.dev, text))
+
+    def clear_txt(self):
+        os.popen("adb -s %s shell input keyevent KEYCODE_MOVE_END" % (self.dev))
+        for i in range(20):
+            the_str1 = f"adb -s {self.dev} shell input keyevent"
+            the_str2 = r" --longpress $(printf 'KEYCODE_DEL %.0s' {1..250})"
+            the_str = the_str1 + the_str2
+            os.popen(the_str)
 
     # 等待时间
     def TimeSleepDuration(self, x):
@@ -31,8 +42,10 @@ class AdbBase:
     # 保存截图到指定路径
     def AdbShellScreencapPullRm(self, path):
         # if self.p is None:
+        self.printLog("截取截图", "截取图片%s" % path)
         os.popen("adb -s %s exec-out screencap -p > %s" % (self.dev, path))
         time.sleep(5)
+        self.printLog("截取截图", "截取图片%s完成" % path)
         # 保存截图到指定路径
 
     # //查看手机上第三方应用的packageName
@@ -43,6 +56,7 @@ class AdbBase:
         return data.stdout.read()
 
     def __adbDump(self, apkName):
+        self.printLog("dump文件", "加载xml文件")
         path = os.getcwd()
         if self.w is not None:
             path = self.w
@@ -52,34 +66,63 @@ class AdbBase:
         time.sleep(2)
         os.popen("adb -s %s pull /sdcard/%s.xml %s >log.txt" % (self.dev, apkName, path))
         time.sleep(2)
+        self.printLog("dump文件", "加载xml文件完成")
         if "xml" in path:
             return path
         else:
             return os.path.join(path, "%s.xml" % apkName)
 
     # 根据字符，在dump文件中查找对应坐标 path:文件地址，不包括文件名，返回是：[[224.0, 174.5], [968.0, 468.5]]
-    def adbDumpTap(self, text, path):
+    def adbDumpTap(self, text, path, resid=None):
+        self.printLog("账号登录", "点击%s" % text)
         self.log("根据文字点击" + "“" + str(text) + "”")
         apkname, _ = self.getAPKInfo(path)
         file = self.__adbDump(apkname)
         json_data = self.xml_to_json(file)
-        self.__cyclefromNode(json_data["hierarchy"], text)
+        self.__cyclefromNode(json_data["hierarchy"], text, resid)
 
-    def __cyclefromNode(self, json, text):
+    # def __cyclefromNode(self, json, text):
+    #     # 遍历每个Node节点
+    #     if isinstance(json, dict) and 'node' in json.keys():
+    #         self.__cyclefromNode(json['node'], text)
+    #
+    #     elif isinstance(json, list) or isinstance(json, tuple):
+    #         for item in json:
+    #             self.__cyclefromNode(item, text)
+    #     else:
+    #         # print(json)
+    #         if text == json["@text"]:
+    #             point = json["@bounds"].split('][')[0][1:].split(",")
+    #             # print(point)
+    #             self.AdbShellInputTap("账号登录", point[0], point[1])
+    #             return True
+    #         else:
+    #             return False
+
+    def __cyclefromNode(self, json, text, resid):
         # 遍历每个Node节点
         if isinstance(json, dict) and 'node' in json.keys():
-            self.__cyclefromNode(json['node'], text)
+            self.__cyclefromNode(json['node'], text,resid)
 
         elif isinstance(json, list) or isinstance(json, tuple):
             for item in json:
-                self.__cyclefromNode(item, text)
+                self.__cyclefromNode(item, text,resid)
         else:
             # print(json)
-            if text == json["@text"]:
-                point = json["@bounds"].split('][')[0][1:].split(",")
-                # print(point)
-                self.AdbShellInputTap(point[0], point[1])
-                return True
+            if text =="":
+                if json["@resource-id"] == resid:
+                    point = json["@bounds"].split('][')[0][1:].split(",")
+                    # print(point)
+                    self.AdbShellInputTap("账号登录", point[0], point[1])
+                    return True
+            elif text !="":
+                if text == json["@text"]:
+                    point = json["@bounds"].split('][')[0][1:].split(",")
+                    # print(point)
+                    self.AdbShellInputTap("账号登录", point[0], point[1])
+                    return True
+            else:
+                return False
 
     # xml文件转换成json
     def xml_to_json(self, xml):
@@ -119,12 +162,14 @@ class AdbBase:
 
     # 启动apk
     def start_apk(self, path):
-        self.log("启动 apk")
+        self.printLog("启动apk", "启动apk %s" % path)
+        self.log("启动apk")
         try:
             apkname, activity = self.getAPKInfo(path)
             subprocess.Popen(
                 "adb -s {0} shell am start -S -n {1}/{2} > sdcard/info.txt".format(self.dev, apkname, activity))
             self.log("启动成功")
+            self.printLog("启动apk", "启动apk成功")
         except:
             err = "apk路径错误"
             return err
@@ -153,17 +198,27 @@ class AdbBase:
     def killCurrentGame(self, path):
         apkname, _ = self.getAPKInfo(path)
         subprocess.Popen("adb -s %s shell am force-stop %s" % (self.dev, apkname))
+
         self.log("关闭应用")
+        self.printLog("关闭应用", "关闭应用%s" % path)
 
     # 打印log到指定地址
     def log(self, info):
         if not self.f:
             return
-        current_time = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
+        current_time = time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime(time.time()))
         # print("%s" % i)
         tag = "adb[" + str(current_time) + "]:  "
         with open(self.f, 'a') as f:  # 'a'表示append,即在原来文件内容后继续写数据（不清楚原有数据）
             f.write(str(tag) + str(info) + "\n")
+
+    def printLog(self, state, info):
+        if not self.detaillog:
+            return
+        else:
+            current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
+            value = {"time": current_time, "level": "info", "stage": state, "msg": info}
+            print(json.dumps(value))
 
 
 def allStart():
@@ -173,15 +228,18 @@ def allStart():
     parser.add_argument('-apkPath', '---apkPath', help='apk路径')
     parser.add_argument('-w', '---windowpath', help='window.xml 路径')
     parser.add_argument('-d', '---debugfilepath', help='log文件路径')
+    parser.add_argument('-l', '---detaillog', help='是否需要输出日志')
     args = parser.parse_args()
 
     sid = args.sid
+    # sid = "127.0.0.1:62028"
     picture = args.picturepath
     apkPath = args.apkPath
     windowpath = args.windowpath
     debugfilepath = args.debugfilepath
+    log = args.detaillog
 
-    adb = AdbBase(sid, picture, windowpath, debugfilepath)
+    adb = AdbBase(sid, picture, windowpath, debugfilepath, log)
     ocr = OCRbase(picture)
     adb.log(10 * "-" + '初始化信息' + 10 * "-")
 
@@ -211,8 +269,9 @@ def dataRe(state=0, err="", datas=""):
         }
     return value
 
+
 # 测试点击
-# AdbBase("127.0.0.1:62001").AdbShellInputTap(1036, 225)
+# AdbBase("127.0.0.1:62001").adbDumpTap("帐号登录", r"D:\bao\apk\20201130\222.apk")
 # time.sleep(1)
 # Adb_base("127.0.0.1:7555").AdbShellInputTap(1000, 28)
 # time.sleep(1)
@@ -222,8 +281,11 @@ def dataRe(state=0, err="", datas=""):
 # print(AdbBase("127.0.0.1:7555").Adbdump(r"D:\bao\1\0531落地页"))
 # print(AdbBase("127.0.0.1:7555").xml_to_json(r"D:\bao\1\0531落地页\window_dump.xml"))
 # print(AdbBase("127.0.0.1:7555").Adbdump_Tap(r"D:\bao\1\0531落地页", "微信"))
-# a = AdbBase("127.0.0.1:62001")
-# a.adbDumpTap("游客登录")
+# a = AdbBase("127.0.0.1:62027")
+# a.clear_txt()
+# a.AdbShellInputText("sada")
+# a.adbDumpTap("", r"D:\Autoadb\sgxy.apk",'com.llxy.qs.cn:id/btn_login')
+# a.adbDumpTap("请输入登录密码", r"D:\Autoadb\sgxy.apk")
 # a= AdbBase("127.0.0.1:62001").install_apk(r"D:\bao\apk\20201130\222.apk")
 
 # print(a)
